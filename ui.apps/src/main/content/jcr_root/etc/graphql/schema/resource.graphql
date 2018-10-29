@@ -1,0 +1,12 @@
+schema{
+    query:Query
+}
+type Query{
+    resource(resourcePath:String!): ResourceSchemaModel
+}
+type ResourceSchemaModel{
+    title: String
+    resourceType:String
+    type:String
+    createdBy:String
+}
