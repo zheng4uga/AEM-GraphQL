@@ -2,6 +2,7 @@ package com.aem.graphql.core.services.impl;
 
 import com.aem.graphql.core.services.GraphqlService;
 import com.aem.graphql.core.services.datafetcher.SlingModelDataFetcher;
+import com.aem.graphql.core.services.datafetcher.ValueMapDataFetcher;
 import com.aem.graphql.core.utils.ServiceUserUtils;
 import graphql.GraphQL;
 import graphql.schema.*;
@@ -9,6 +10,7 @@ import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
+import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
@@ -44,8 +46,7 @@ public class GraphqlServiceImpl implements GraphqlService {
     @Reference
     ResourceResolverFactory resourceResolverFactory;
 
-    @Reference
-    SlingModelDataFetcher slingModelDataFetcher;
+    private String[] schemaFiles;
 
     @ObjectClassDefinition(name="GraphQL Service",
             description = "Provides an service to use to map graphql schema")
@@ -54,47 +55,52 @@ public class GraphqlServiceImpl implements GraphqlService {
         String[] getSchemaFile() default {"/etc/graphql/schema/resource.graphql"};
     }
 
-    public GraphQL getGraphQL() {
+    public GraphQL getGraphQL(SlingHttpServletRequest request) {
+        if(graphQL == null){
+            ResourceResolver graphQLRR = null;
+            try {
+                graphQLRR = ServiceUserUtils.getServiceResourceResolver("graphql-user", resourceResolverFactory);
+                if(graphQLRR !=null && schemaFiles !=null) {
+                    this.buildGraphQL(graphQLRR,request);
+                }
+            }catch (Exception ex){
+                log.error("Exception: ",ex);
+            }finally {
+                if (graphQLRR != null && graphQLRR.isLive()) {
+                    graphQLRR.close();
+                }
+            }
+        }
         return graphQL;
     }
 
     @Activate
     public void activate(GraphqlServiceImpl.Config config) {
-        String[] schemaFiles = config.getSchemaFile();
-        ResourceResolver rr = null;
-        try {
-            rr = ServiceUserUtils.getServiceResourceResolver("graphql-user", resourceResolverFactory);
-            if(rr !=null && schemaFiles !=null) {
-                this.buildGraphQL(schemaFiles,rr);
-            }
-        }catch (Exception ex){
-            log.error("Exception: ",ex);
-        }finally{
-            if(rr !=null && rr.isLive()){
-                rr.close();
-            }
-        }
+        schemaFiles = config.getSchemaFile();
+
     }
-    private void buildGraphQL(String[] schemaFiles, ResourceResolver rr){
+    private void buildGraphQL(ResourceResolver graphQLRR,SlingHttpServletRequest req){
         TypeDefinitionRegistry typeRegistry = new TypeDefinitionRegistry();
         SchemaParser schemaParser = new SchemaParser();
         SchemaGenerator schemaGenerator = new SchemaGenerator();
         for(String filePath:schemaFiles){
-           Resource schemaFileRes = rr.getResource(filePath);
+           Resource schemaFileRes = graphQLRR.getResource(filePath);
            if(null != schemaFileRes){
                InputStream resourceStream = schemaFileRes.adaptTo(InputStream.class);
                Reader resourceStreamReader = new InputStreamReader(resourceStream);
                typeRegistry.merge(schemaParser.parse(resourceStreamReader));
            }
         }
-        GraphQLSchema schema = schemaGenerator.makeExecutableSchema(typeRegistry,this.buildRuntimeWiring());
+        GraphQLSchema schema = schemaGenerator.makeExecutableSchema(typeRegistry,this.buildRuntimeWiring(req));
         if(null != schema){
             graphQL = GraphQL.newGraphQL(schema).build();
         }
     }
 
-    private RuntimeWiring buildRuntimeWiring(){
-         return RuntimeWiring.newRuntimeWiring()
+    private RuntimeWiring buildRuntimeWiring(SlingHttpServletRequest request){
+         SlingModelDataFetcher slingModelDataFetcher = new SlingModelDataFetcher(request);
+        //ValueMapDataFetcher  slingModelDataFetcher = new ValueMapDataFetcher(request);
+        return RuntimeWiring.newRuntimeWiring()
                 .type("Query", typeWiring -> typeWiring
                         .dataFetcher("resource", slingModelDataFetcher))
                 .build();

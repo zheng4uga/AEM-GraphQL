@@ -62,7 +62,7 @@ public class GraphqlServlet extends SlingAllMethodsServlet {
     protected void doPost(final SlingHttpServletRequest req,
                           final SlingHttpServletResponse resp) {
 
-        GraphQL ql = graphqlService.getGraphQL();
+        GraphQL ql = graphqlService.getGraphQL(req);
         resp.addHeader("Content-Type","application/json");
         try {
             if (ql != null) {
@@ -77,7 +77,5 @@ public class GraphqlServlet extends SlingAllMethodsServlet {
         }catch (Exception ex){
             log.error("Exception: ",ex);
         }
-
-
     }
 }
