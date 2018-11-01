@@ -56,6 +56,7 @@ public class GraphqlServiceImpl implements GraphqlService {
     }
 
     public GraphQL getGraphQL(SlingHttpServletRequest request) {
+
         if(graphQL == null){
             ResourceResolver graphQLRR = null;
             try {
@@ -106,8 +107,7 @@ public class GraphqlServiceImpl implements GraphqlService {
                 .build();
     }
 
-    private RuntimeWiring buildCustomRuntimeWiring(){
-        return null;
-    }
+
+
 
 }
