@@ -1,8 +1,6 @@
 package com.aem.graphql.core.services.impl;
 
 import com.aem.graphql.core.services.GraphqlService;
-import com.aem.graphql.core.services.datafetcher.SlingModelDataFetcher;
-import com.aem.graphql.core.services.datafetcher.ValueMapDataFetcher;
 import com.aem.graphql.core.utils.ServiceUserUtils;
 import graphql.GraphQL;
 import graphql.schema.*;
@@ -27,8 +25,6 @@ import org.slf4j.LoggerFactory;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-
-import static graphql.Scalars.GraphQLString;
 
 @Component(service = GraphqlService.class,
     immediate = true,
@@ -96,6 +92,10 @@ public class GraphqlServiceImpl implements GraphqlService {
         if(null != schema){
             graphQL = GraphQL.newGraphQL(schema).build();
         }
+    }
+
+    private void buildDynamicGraphQL(){
+
     }
 
     private RuntimeWiring buildRuntimeWiring(SlingHttpServletRequest request){

@@ -15,10 +15,10 @@
  */
 package com.aem.graphql.core.servlets;
 
+import com.aem.graphql.core.models.GraphQLAdapter;
 import com.aem.graphql.core.services.GraphqlService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import graphql.ExecutionResult;
-import graphql.GraphQL;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
@@ -47,7 +47,8 @@ import java.util.stream.Collectors;
            property={
                    Constants.SERVICE_DESCRIPTION + "=GraphQL Endpoint",
                    "sling.servlet.methods=" + HttpConstants.METHOD_POST,
-                   "sling.servlet.paths=/bin/servlet/graphql",
+                   "sling.servlet.resourceTypes=/apps/weretail/components/form/text",
+                   "sling.servlet.selectors=graphql",
                    "sling.servlet.extensions=json"
            })
 public class GraphqlServlet extends SlingAllMethodsServlet {
@@ -61,19 +62,18 @@ public class GraphqlServlet extends SlingAllMethodsServlet {
     @Override
     protected void doPost(final SlingHttpServletRequest req,
                           final SlingHttpServletResponse resp) {
-
-        GraphQL ql = graphqlService.getGraphQL(req);
         resp.addHeader("Content-Type","application/json");
         try {
-            if (ql != null) {
+                GraphQLAdapter graphQLAdapter = req.adaptTo(GraphQLAdapter.class);
                 String query = req.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
                 if (StringUtils.isNotEmpty(query)) {
-                   ExecutionResult executionResult = ql.execute(query);
-                   String response = new ObjectMapper().writeValueAsString(executionResult);
-                   resp.getWriter().print(response);
-                   resp.getWriter().flush();
+                    graphqlService.getGraphQL(req).execute(query);
+                    ExecutionResult executionResult = graphQLAdapter.execute(query);
+                    String response = new ObjectMapper().writeValueAsString(executionResult);
+                    resp.getWriter().print(response);
+                    resp.getWriter().flush();
                 }
-            }
+
         }catch (Exception ex){
             log.error("Exception: ",ex);
         }
