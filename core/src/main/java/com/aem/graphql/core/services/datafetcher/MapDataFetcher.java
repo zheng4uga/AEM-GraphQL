@@ -4,7 +4,6 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.resource.ResourceResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,14 +16,14 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ValueMapDataFetcher implements DataFetcher<Map> {
-    private static Logger log = LoggerFactory.getLogger(SlingModelDataFetcher.class);
+public class MapDataFetcher implements DataFetcher<Map> {
+    private static Logger log = LoggerFactory.getLogger(MapDataFetcher.class);
 
     SlingHttpServletRequest request;
 
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
-    public ValueMapDataFetcher(SlingHttpServletRequest request){
+    public MapDataFetcher(SlingHttpServletRequest request){
         this.request = request;
     }
     @Override

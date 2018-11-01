@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
            property={
                    Constants.SERVICE_DESCRIPTION + "=GraphQL Endpoint",
                    "sling.servlet.methods=" + HttpConstants.METHOD_POST,
-                   "sling.servlet.resourceTypes=/apps/weretail/components/form/text",
+                   "sling.servlet.resourceTypes=/apps/aem-graphql/components/content/title",
                    "sling.servlet.selectors=graphql",
                    "sling.servlet.extensions=json"
            })

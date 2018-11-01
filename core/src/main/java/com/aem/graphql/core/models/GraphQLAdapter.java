@@ -1,6 +1,6 @@
 package com.aem.graphql.core.models;
 
-import com.aem.graphql.core.services.datafetcher.ValueMapDataFetcher;
+import com.aem.graphql.core.services.datafetcher.MapDataFetcher;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.schema.GraphQLObjectType;
@@ -98,7 +98,7 @@ public class GraphQLAdapter {
                         newFieldDefinition()
                                 .name("resource")
                                 .type(resourceGraphQLType)
-                                .dataFetcher(new ValueMapDataFetcher(request))
+                                .dataFetcher(new MapDataFetcher(request))
                 ).build();
     }
     // throwing generic exception

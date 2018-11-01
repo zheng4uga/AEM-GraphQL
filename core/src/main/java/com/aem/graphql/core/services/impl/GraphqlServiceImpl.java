@@ -1,6 +1,7 @@
 package com.aem.graphql.core.services.impl;
 
 import com.aem.graphql.core.services.GraphqlService;
+import com.aem.graphql.core.services.datafetcher.MapDataFetcher;
 import com.aem.graphql.core.utils.ServiceUserUtils;
 import graphql.GraphQL;
 import graphql.schema.*;
@@ -99,11 +100,10 @@ public class GraphqlServiceImpl implements GraphqlService {
     }
 
     private RuntimeWiring buildRuntimeWiring(SlingHttpServletRequest request){
-         SlingModelDataFetcher slingModelDataFetcher = new SlingModelDataFetcher(request);
-        //ValueMapDataFetcher  slingModelDataFetcher = new ValueMapDataFetcher(request);
+        MapDataFetcher valueMapDataFetcher = new MapDataFetcher(request);
         return RuntimeWiring.newRuntimeWiring()
                 .type("Query", typeWiring -> typeWiring
-                        .dataFetcher("resource", slingModelDataFetcher))
+                        .dataFetcher("resource", valueMapDataFetcher))
                 .build();
     }
 
