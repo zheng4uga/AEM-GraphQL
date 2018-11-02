@@ -7,12 +7,10 @@ import org.apache.sling.api.resource.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jcr.Node;
-import javax.jcr.Property;
-import javax.jcr.PropertyIterator;
-import javax.jcr.PropertyType;
+import javax.jcr.*;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,43 +29,71 @@ public class MapDataFetcher implements DataFetcher<Map> {
         //String resourcePath = dataFetchingEnvironment.getArgument("resourcePath");
         // we are passing in the request to ensure user has access to what they want to access
         try {
-            Map<String,Object> resultMap = new HashMap<>();
-            Resource schemaResource = request.getResource();
-            Node schemaNode = schemaResource.adaptTo(Node.class);
-            PropertyIterator propertyIterator = schemaNode.getProperties();
-            while(propertyIterator.hasNext()){
-                Property property = propertyIterator.nextProperty();
-                String name = property.getName();
-                String processedName = name.substring(name.indexOf(':')+1);
-                switch(property.getType()){
-                    case PropertyType.DATE :
-                        Calendar currentCalendar =  property.getDate();
-                        resultMap.put(processedName,sdf.format(currentCalendar.getTime()));
-                        break;
-                    case PropertyType.BOOLEAN:
-                        resultMap.put(processedName,property.getBoolean());
-                        break;
-                    case PropertyType.DOUBLE:
-                        resultMap.put(processedName,property.getDouble());
-                        break;
-                    case PropertyType.DECIMAL:
-                        resultMap.put(processedName,property.getDecimal());
-                        break;
-                    case PropertyType.NAME:
-                        resultMap.put(processedName,property.getString());
-                        break;
-                    case PropertyType.LONG:
-                        resultMap.put(processedName,property.getLong());
-                        break;
-                    default:
-                        resultMap.put(processedName,property.getString());
-                        break;
-                }
-            }
-            return resultMap;
+            Resource dataResource = null;
+           if(dataFetchingEnvironment.containsArgument("resourcePath")){
+               dataResource = request.getResourceResolver().getResource(dataFetchingEnvironment.getArgument("resourcePath"));
+           }else{
+               // if resource isn't in the argument try to get it from the request
+               dataResource = request.getResource();
+           }
+           Node schemaNode=null;
+           if(null !=dataResource &&
+                   (schemaNode =dataResource.adaptTo(Node.class)) !=null){
+               return buildFetcherMap(schemaNode);
+           }
         } catch (Exception e) {
             log.info("Exception ",e);
         }
-        return null;
+        return Collections.EMPTY_MAP;
+    }
+
+    private Map<String,Object> buildFetcherMap(Node schemaNode) throws RepositoryException {
+        Map<String,Object> currentResultMap =buildResultMap(schemaNode);
+        if(!schemaNode.hasNodes()){
+            return currentResultMap;
+        }
+        NodeIterator nodeIterator = schemaNode.getNodes();
+        while(nodeIterator.hasNext()){
+            Node nextNode = nodeIterator.nextNode();
+            if(nextNode !=null){
+                currentResultMap.put(nextNode.getName(),buildFetcherMap(nextNode));
+            }
+        }
+        return currentResultMap;
+    }
+
+    private Map<String,Object> buildResultMap(Node schemaNode) throws RepositoryException {
+        Map<String,Object> resultMap = new HashMap<>();
+        PropertyIterator propertyIterator = schemaNode.getProperties();
+        while(propertyIterator.hasNext()){
+            Property property = propertyIterator.nextProperty();
+            String name = property.getName();
+            String processedName = name.substring(name.indexOf(':')+1);
+            switch(property.getType()){
+                case PropertyType.DATE :
+                    Calendar currentCalendar =  property.getDate();
+                    resultMap.put(processedName,sdf.format(currentCalendar.getTime()));
+                    break;
+                case PropertyType.BOOLEAN:
+                    resultMap.put(processedName,property.getBoolean());
+                    break;
+                case PropertyType.DOUBLE:
+                    resultMap.put(processedName,property.getDouble());
+                    break;
+                case PropertyType.DECIMAL:
+                    resultMap.put(processedName,property.getDecimal());
+                    break;
+                case PropertyType.NAME:
+                    resultMap.put(processedName,property.getString());
+                    break;
+                case PropertyType.LONG:
+                    resultMap.put(processedName,property.getLong());
+                    break;
+                default:
+                    resultMap.put(processedName,property.getString());
+                    break;
+            }
+        }
+        return resultMap;
     }
 }

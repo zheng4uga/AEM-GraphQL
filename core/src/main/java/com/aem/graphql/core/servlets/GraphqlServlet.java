@@ -67,7 +67,6 @@ public class GraphqlServlet extends SlingAllMethodsServlet {
                 GraphQLAdapter graphQLAdapter = req.adaptTo(GraphQLAdapter.class);
                 String query = req.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
                 if (StringUtils.isNotEmpty(query)) {
-                    graphqlService.getGraphQL(req).execute(query);
                     ExecutionResult executionResult = graphQLAdapter.execute(query);
                     String response = new ObjectMapper().writeValueAsString(executionResult);
                     resp.getWriter().print(response);
