@@ -2,6 +2,14 @@
 
 Integrate GraphQL into AEM
 
+This project try to achieve integration GraphQL into AEM. It uses graphql-java library to handle sdl and programmatically creating schema base on the property definition on requested jcr:node. This way it creates a dynamic schema creation base on jcr:node definition. 
+
+## Classes this project created
+GraphqlAdapter - Sling model that handle the dynamic schema creation base on resource that's bind to the request
+GraphqlService - Service that handle reading the sdl and convert GraphSchema to be use by the graphql-java (Require graphql-user service user)
+MapDataFetcher - Datafetcher classes convert a node into a map that will be used by the schema to lookup values
+GraphqlServlet - Servlet that provides a sample of how to use these different classes
+
 ## Modules
 
 The main parts of the template are:
