@@ -36,6 +36,8 @@ public abstract class AEMGraphQL {
    protected GraphQLObjectType queryType;
    protected GraphQL graphQL;
 
+   abstract void init() throws Exception;
+
    protected void initQuery(SlingHttpServletRequest request, Resource resource) throws Exception {
        GraphQLObjectType.Builder rootBuilder = buildResourceGraphQLType(resource.adaptTo(Node.class));
        resourceGraphQLType = rootBuilder.build();// build the main root builder
