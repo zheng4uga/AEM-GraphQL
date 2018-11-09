@@ -46,10 +46,11 @@ import java.util.stream.Collectors;
            immediate = true,
            property={
                    Constants.SERVICE_DESCRIPTION + "=GraphQL Endpoint",
+                   "sling.servlet.methods=" + HttpConstants.METHOD_GET,
                    "sling.servlet.methods=" + HttpConstants.METHOD_POST,
-                   "sling.servlet.resourceTypes=/apps/aem-graphql/components/content/title",
                    "sling.servlet.selectors=graphql",
-                   "sling.servlet.extensions=json"
+                   "sling.servlet.extensions=json",
+                   "sling.servlet.paths=/services/graphql/resource"
            })
 public class GraphqlServlet extends SlingAllMethodsServlet {
 
@@ -58,6 +59,25 @@ public class GraphqlServlet extends SlingAllMethodsServlet {
 
     @Reference
     GraphqlService graphqlService;
+
+    protected void doGet(final SlingHttpServletRequest req,
+                         final SlingHttpServletResponse resp){
+        resp.addHeader("Content-Type","application/json");
+        try{
+            GraphQLAdapter graphQLAdapter = req.adaptTo(GraphQLAdapter.class);
+            String query = req.getParameter("query");
+            if(StringUtils.isNotEmpty(query) && graphQLAdapter !=null){
+                // now we can execute it
+                ExecutionResult executionResult = graphQLAdapter.execute(query);
+                String response = new ObjectMapper().writeValueAsString(executionResult);
+                resp.getWriter().print(response);
+                resp.getWriter().flush();
+            }
+        }catch (Exception ex){
+            log.error("Exception: ",ex);
+        }
+
+    }
 
     @Override
     protected void doPost(final SlingHttpServletRequest req,
