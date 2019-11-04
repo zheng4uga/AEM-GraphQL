@@ -1,5 +1,6 @@
 package com.aem.graphql.core.services.datafetcher;
 
+import com.aem.graphql.core.services.GraphqlProperties;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.apache.sling.api.SlingHttpServletRequest;
@@ -18,11 +19,13 @@ public class MapDataFetcher implements DataFetcher<Map> {
     private static Logger log = LoggerFactory.getLogger(MapDataFetcher.class);
 
     SlingHttpServletRequest request;
+    GraphqlProperties graphqlProperties;
 
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
-    public MapDataFetcher(SlingHttpServletRequest request){
+    public MapDataFetcher(SlingHttpServletRequest request, GraphqlProperties graphqlProperties){
         this.request = request;
+        this.graphqlProperties = graphqlProperties;
     }
     @Override
     public Map get(DataFetchingEnvironment dataFetchingEnvironment) {
@@ -68,30 +71,32 @@ public class MapDataFetcher implements DataFetcher<Map> {
         while(propertyIterator.hasNext()){
             Property property = propertyIterator.nextProperty();
             String name = property.getName();
-            String processedName = name.substring(name.indexOf(':')+1);
-            switch(property.getType()){
-                case PropertyType.DATE :
-                    Calendar currentCalendar =  property.getDate();
-                    resultMap.put(processedName,sdf.format(currentCalendar.getTime()));
-                    break;
-                case PropertyType.BOOLEAN:
-                    resultMap.put(processedName,property.getBoolean());
-                    break;
-                case PropertyType.DOUBLE:
-                    resultMap.put(processedName,property.getDouble());
-                    break;
-                case PropertyType.DECIMAL:
-                    resultMap.put(processedName,property.getDecimal());
-                    break;
-                case PropertyType.NAME:
-                    resultMap.put(processedName,property.getString());
-                    break;
-                case PropertyType.LONG:
-                    resultMap.put(processedName,property.getLong());
-                    break;
-                default:
-                    resultMap.put(processedName,property.getString());
-                    break;
+            String processedName = name.replace(":","_");
+            if(this.graphqlProperties.shouldAdd(name)) {
+                switch (property.getType()) {
+                    case PropertyType.DATE:
+                        Calendar currentCalendar = property.getDate();
+                        resultMap.put(processedName, sdf.format(currentCalendar.getTime()));
+                        break;
+                    case PropertyType.BOOLEAN:
+                        resultMap.put(processedName, property.getBoolean());
+                        break;
+                    case PropertyType.DOUBLE:
+                        resultMap.put(processedName, property.getDouble());
+                        break;
+                    case PropertyType.DECIMAL:
+                        resultMap.put(processedName, property.getDecimal());
+                        break;
+                    case PropertyType.NAME:
+                        resultMap.put(processedName, property.getString());
+                        break;
+                    case PropertyType.LONG:
+                        resultMap.put(processedName, property.getLong());
+                        break;
+                    default:
+                        resultMap.put(processedName, property.getString());
+                        break;
+                }
             }
         }
         return resultMap;

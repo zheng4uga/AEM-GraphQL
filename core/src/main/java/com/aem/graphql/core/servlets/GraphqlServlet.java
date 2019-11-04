@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
                    "sling.servlet.methods=" + HttpConstants.METHOD_POST,
                    "sling.servlet.selectors=graphql",
                    "sling.servlet.extensions=json",
-                   "sling.servlet.paths=/services/graphql/resource"
+                   "sling.servlet.resourceTypes=sling/servlet/default"
            })
 public class GraphqlServlet extends SlingAllMethodsServlet {
 

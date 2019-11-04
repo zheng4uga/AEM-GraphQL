@@ -1,5 +1,6 @@
 package com.aem.graphql.core.services.impl;
 
+import com.aem.graphql.core.services.GraphqlProperties;
 import com.aem.graphql.core.services.GraphqlService;
 import com.aem.graphql.core.services.datafetcher.MapDataFetcher;
 import com.aem.graphql.core.utils.ServiceUserUtils;
@@ -38,10 +39,14 @@ public class GraphqlServiceImpl implements GraphqlService {
 
     private static Logger log = LoggerFactory.getLogger(GraphqlServiceImpl.class);
 
+
     private GraphQL graphQL;
 
     @Reference
     ResourceResolverFactory resourceResolverFactory;
+
+    @Reference
+    private GraphqlProperties graphqlProperties;
 
     private String[] schemaFiles;
 
@@ -95,12 +100,9 @@ public class GraphqlServiceImpl implements GraphqlService {
         }
     }
 
-    private void buildDynamicGraphQL(){
-
-    }
 
     private RuntimeWiring buildRuntimeWiring(SlingHttpServletRequest request){
-        MapDataFetcher valueMapDataFetcher = new MapDataFetcher(request);
+        MapDataFetcher valueMapDataFetcher = new MapDataFetcher(request,this.graphqlProperties);
         return RuntimeWiring.newRuntimeWiring()
                 .type("Query", typeWiring -> typeWiring
                         .dataFetcher("resource", valueMapDataFetcher))
