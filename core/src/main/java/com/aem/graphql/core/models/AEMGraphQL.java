@@ -1,5 +1,6 @@
 package com.aem.graphql.core.models;
 
+import com.aem.graphql.core.services.GraphqlProperties;
 import com.aem.graphql.core.services.datafetcher.MapDataFetcher;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
@@ -9,6 +10,7 @@ import graphql.schema.GraphQLSchema;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.resource.Resource;
+import org.apache.sling.models.annotations.injectorspecific.OSGiService;
 
 import javax.jcr.*;
 
@@ -35,6 +37,9 @@ public abstract class AEMGraphQL {
    protected GraphQLObjectType resourceGraphQLType;
    protected GraphQLObjectType queryType;
    protected GraphQL graphQL;
+
+   @OSGiService
+   private GraphqlProperties graphqlProperties;
 
    abstract void init() throws Exception;
 
@@ -64,7 +69,7 @@ public abstract class AEMGraphQL {
             Node currentNode = nodeIterator.nextNode();
             // add each field to previously built graphqlObject
             if(currentNode !=null) {
-                currentBuilder.field(newFieldDefinition().name(currentNode.getName()).type(buildResourceGraphQLType(currentNode)));
+                currentBuilder.field(newFieldDefinition().name(currentNode.getName().replace(":","_")).type(buildResourceGraphQLType(currentNode)));
             }
         }
         return currentBuilder;
@@ -72,21 +77,20 @@ public abstract class AEMGraphQL {
 
     protected GraphQLObjectType.Builder convertNodeToGraphQLObjectType(Node node) throws Exception {
         if(node !=null){
-            GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(node.getName()).description(node.getPath());
+            GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(node.getName().replace(":","_")).description(node.getPath());
             PropertyIterator propertyIterator = node.getProperties();
             while (propertyIterator.hasNext()) {
                 Property property = propertyIterator.nextProperty();
-                String propName=property.getName();
+                String propName= property.getName();
                 //TODO: need to add a ignorable property so certain property can be blacklist
                 if (property != null) {
                     int type = property.getType();
-                    if (propertiesMapper.containsKey(type)) {
-                        builder.field(
-                                newFieldDefinition()
-                                        .name(propName.substring(propName.indexOf(':')+1))
-                                        .type(propertiesMapper.get(type))
+                    if (propertiesMapper.containsKey(type) && this.graphqlProperties.shouldAdd(propName)) {
+                           builder.field(
+                                   newFieldDefinition()
+                                           .name(propName.replace(":", "_"))
+                                           .type(propertiesMapper.get(type)));
 
-                        );
                     }
                 }
             }
@@ -96,44 +100,13 @@ public abstract class AEMGraphQL {
             throw new Exception("Node use to convert to GraphQL object cannot be null");
         }
     }
-    /*
-    private void buildResourceGraphQLType(){
-        Node node = resource.adaptTo(Node.class);
-        //GraphQLObjectType resourceQL=null;
-        if(node !=null){
-            try {
-                GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name("ResourceSchema")
-                        .description("Dynamically build an AEM resource schema");
-                PropertyIterator propertyIterator = node.getProperties();
-                while (propertyIterator.hasNext()) {
-                    Property property = propertyIterator.nextProperty();
-                    String propName=property.getName();
-                    if (property != null) {
-                        int type = property.getType();
-                        if (propertiesMapper.containsKey(type)) {
-                            builder.field(
-                                    newFieldDefinition()
-                                            .name(propName.substring(propName.indexOf(':')+1))
-                                            .type(propertiesMapper.get(type))
-
-                            );
-                        }
-                    }
-                }
-                resourceGraphQLType = builder.build();
-            }catch (Exception e){
-                log.error("Exception :: {}",e);
-            }
-        }
-    }
-    */
 
     protected void buildQueryType(SlingHttpServletRequest request){
         queryType  = GraphQLObjectType.newObject().name("query").field(
                 newFieldDefinition()
                         .name("resource")
                         .type(resourceGraphQLType)
-                        .dataFetcher(new MapDataFetcher(request))
+                        .dataFetcher(new MapDataFetcher(request,graphqlProperties))
         ).build();
     }
     // throwing generic exception
